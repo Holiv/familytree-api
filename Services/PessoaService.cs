@@ -55,6 +55,8 @@ namespace FamilyTree.Services
                 .Include(p => p.Pai)
                 .Include(p => p.Mae)
                 .Include(p => p.Conjuge)
+                .Include(p => p.FilhosDoPai)
+                .Include(p => p.FilhosDaMae)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (pessoa is null) return null;
@@ -67,13 +69,19 @@ namespace FamilyTree.Services
                 Cpf = pessoa.CPF,
                 PaiId = pessoa.PaiId,
                 MaeId = pessoa.MaeId,
-                ConjugeId = pessoa.ConjugeId
+                ConjugeId = pessoa.ConjugeId,
+                FilhosDoPai = pessoa.FilhosDoPai.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList(),
+                FilhosDaMae = pessoa.FilhosDaMae.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList()
             };
         }
 
         public async Task<IEnumerable<PessoaResponseDto>> ObterTodosAsync()
         {
-            var pessoas = await _context.Pessoas.ToListAsync();
+            var pessoas = await _context.Pessoas
+                .Include(p => p.FilhosDoPai)
+                .Include(p => p.FilhosDaMae)
+                .ToListAsync();
+
             return pessoas.Select(p => new PessoaResponseDto
             {
                 Id = p.Id,
@@ -82,7 +90,9 @@ namespace FamilyTree.Services
                 Cpf = p.CPF,
                 PaiId = p.PaiId,
                 MaeId = p.MaeId,
-                ConjugeId = p.ConjugeId
+                ConjugeId = p.ConjugeId,
+                FilhosDoPai = p.FilhosDoPai.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList(),
+                FilhosDaMae = p.FilhosDaMae.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList()
             });
         }
 
@@ -96,6 +106,32 @@ namespace FamilyTree.Services
             {
                 Id = f.Id,
                 Nome = f.Nome,
+            });
+        }
+
+        public async Task<IEnumerable<FilhoDto>> ObterFilhosDoPaiAsync(int id)
+        {
+            var filhos = await _context.Pessoas
+                .Where(p => p.PaiId == id)
+                .ToListAsync();
+
+            return filhos.Select(f => new FilhoDto
+            {
+                Id = f.Id,
+                Nome = f.Nome
+            });
+        }
+
+        public async Task<IEnumerable<FilhoDto>> ObterFilhosDaMaeAsync(int id)
+        {
+            var filhos = await _context.Pessoas
+                .Where(p => p.MaeId == id)
+                .ToListAsync();
+
+            return filhos.Select(f => new FilhoDto
+            {
+                Id = f.Id,
+                Nome = f.Nome
             });
         }
 
@@ -118,7 +154,8 @@ namespace FamilyTree.Services
         public async Task<object?> ObterSubArvoreAsync(int id)
         {
             var pessoa = await _context.Pessoas
-                .Include(p => p.Filhos)
+                .Include(p => p.FilhosDoPai)
+                .Include(p => p.FilhosDaMae)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (pessoa is null) return null;
@@ -126,7 +163,8 @@ namespace FamilyTree.Services
             return new
             {
                 Pessoa = pessoa.Nome,
-                Filhos = pessoa.Filhos.Select(f => new { f.Id, f.Nome })
+                FilhosDoPai = pessoa.FilhosDoPai.Select(f => new { f.Id, f.Nome }),
+                FilhosDaMae = pessoa.FilhosDaMae.Select(f => new { f.Id, f.Nome })
             };
         }
     }

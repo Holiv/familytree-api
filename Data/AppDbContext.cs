@@ -1,5 +1,4 @@
 using FamilyTree.Models;
-using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 
 namespace FamilyTree.Data
@@ -8,96 +7,99 @@ namespace FamilyTree.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<Pessoa> Pessoas {get; set;}
-        public DbSet<Usuario> Usuarios {get; set;}
-        public DbSet<Registro> Registros {get; set;}
-        public DbSet<RegistroPessoa> RegistrosPessoa {get; set;}
-        public DbSet<Assinatura> Assinaturas {get; set;}
-        public DbSet<Pedido> Pedidos {get; set;}
-        public DbSet<ItemPedido> ItensPedidos {get; set;}
-        public DbSet<ValidationToken> ValidationTokens {get; set;}
+        public DbSet<Pessoa> Pessoas { get; set; }
+        public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<Registro> Registros { get; set; }
+        public DbSet<RegistroPessoa> RegistrosPessoa { get; set; }
+        public DbSet<Assinatura> Assinaturas { get; set; }
+        public DbSet<Pedido> Pedidos { get; set; }
+        public DbSet<ItemPedido> ItensPedidos { get; set; }
+        public DbSet<ValidationToken> ValidationTokens { get; set; }
         public DbSet<Produto> Produtos { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Pessoa: Pai
-            modelBuilder.Entity<Pessoa>()
-            .HasOne(p => p.Pai)
-            .WithMany(p => p.Filhos)
-            .HasForeignKey(p => p.PaiId)
-            .OnDelete(DeleteBehavior.Restrict);
+            base.OnModelCreating(modelBuilder);
 
-            //Pessoa: Mãe
+            // Pessoa: Pai ↔ FilhosDoPai
             modelBuilder.Entity<Pessoa>()
-            .HasOne(p => p.Mae)
-            .WithMany(p => p.Filhos)
-            .HasForeignKey(p => p.MaeId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasMany(p => p.FilhosDoPai)
+                .WithOne(p => p.Pai)
+                .HasForeignKey(p => p.PaiId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            //Pessoa: Conjuge
+            // Pessoa: Mãe ↔ FilhosDaMae
             modelBuilder.Entity<Pessoa>()
-            .HasOne(p => p.Conjuge)
-            .WithMany()
-            .HasForeignKey(p => p.ConjugeId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasMany(p => p.FilhosDaMae)
+                .WithOne(p => p.Mae)
+                .HasForeignKey(p => p.MaeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Indice único para CPF
+            // Pessoa: Conjuge (auto-relacionamento 1:1)
             modelBuilder.Entity<Pessoa>()
-            .HasIndex(p => p.CPF)
-            .IsUnique();
+                .HasOne(p => p.Conjuge)
+                .WithOne()
+                .HasForeignKey<Pessoa>(p => p.ConjugeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Usuário -> Pessoa
+            // Índice único para CPF
+            modelBuilder.Entity<Pessoa>()
+                .HasIndex(p => p.CPF)
+                .IsUnique();
+
+            // Usuário → Pessoa
             modelBuilder.Entity<Usuario>()
-            .HasOne(u => u.Pessoa)
-            .WithMany()
-            .HasForeignKey(u => u.PessoaId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(u => u.Pessoa)
+                .WithMany()
+                .HasForeignKey(u => u.PessoaId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Usuario>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
+                .HasIndex(u => u.Email)
+                .IsUnique();
 
-            // ToeknValidação -> Pessoa
+            // ValidationToken → Pessoa
             modelBuilder.Entity<ValidationToken>()
-            .HasOne(t => t.Pessoa)
-            .WithMany()
-            .HasForeignKey(t => t.PessoaId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(t => t.Pessoa)
+                .WithMany()
+                .HasForeignKey(t => t.PessoaId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // TokenValidaçao -> Emitente
+            // ValidationToken → Emitente (Usuário)
             modelBuilder.Entity<ValidationToken>()
-            .HasOne<Usuario>()
-            .WithMany()
-            .HasForeignKey(t => t.GeradoPorUsuarioId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasOne<Usuario>()
+                .WithMany()
+                .HasForeignKey(t => t.GeradoPorUsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ValidationToken>()
-            .HasIndex(t => t.Token)
-            .IsUnique();
+                .HasIndex(t => t.Token)
+                .IsUnique();
 
             // RegistroPessoa: Chave composta
             modelBuilder.Entity<RegistroPessoa>()
-            .HasKey(rp => new {rp.RegistroId, rp.PessoaId});
+                .HasKey(rp => new { rp.RegistroId, rp.PessoaId });
 
             modelBuilder.Entity<RegistroPessoa>()
-            .HasOne(rp => rp.Registro)
-            .WithMany(r => r.RegistroPessoas)
-            .HasForeignKey(rp => rp.RegistroId)
-            .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(rp => rp.Registro)
+                .WithMany(r => r.RegistroPessoas)
+                .HasForeignKey(rp => rp.RegistroId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RegistroPessoa>()
-            .HasOne(rp => rp.Pessoa)
-            .WithMany(r => r.RegistroPessoas)
-            .HasForeignKey(rp => rp.PessoaId)
-            .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(rp => rp.Pessoa)
+                .WithMany(r => r.RegistroPessoas)
+                .HasForeignKey(rp => rp.PessoaId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ItemPedido → Pedido (N:1)
             modelBuilder.Entity<ItemPedido>()
-            .HasOne(i => i.Pedido)
-            .WithMany(p => p.Itens)
-            .HasForeignKey(i => i.PedidoId);
+                .HasOne(i => i.Pedido)
+                .WithMany(p => p.Itens)
+                .HasForeignKey(i => i.PedidoId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Produto: Nome único opcional
+            // Produto: Nome único
             modelBuilder.Entity<Produto>()
                 .HasIndex(p => p.Nome)
                 .IsUnique();
@@ -109,19 +111,12 @@ namespace FamilyTree.Data
                 .HasForeignKey(p => p.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ItemPedido → Pedido
-            modelBuilder.Entity<ItemPedido>()
-                .HasOne(i => i.Pedido)
-                .WithMany(p => p.Itens)
-                .HasForeignKey(i => i.PedidoId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // ItemPedido → Produto
             modelBuilder.Entity<ItemPedido>()
                 .HasOne(i => i.Produto)
                 .WithMany()
                 .HasForeignKey(i => i.ProdutoId)
-                .OnDelete(DeleteBehavior.Restrict);     
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

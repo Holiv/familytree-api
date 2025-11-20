@@ -37,13 +37,14 @@ namespace FamilyTree.DTOs
         public int? MaeId { get; set; }
         public int? ConjugeId { get; set; }
 
-        // Lista de filhos (somente IDs e nomes)
-        public List<FilhoDto> Filhos { get; set; } = new List<FilhoDto>();
+        // Agora temos duas listas distintas de filhos
+        public List<FilhoDto> FilhosDoPai { get; set; } = new List<FilhoDto>();
+        public List<FilhoDto> FilhosDaMae { get; set; } = new List<FilhoDto>();
     }
 
     public class FilhoDto
     {
         public int Id { get; set; }
-        public string Nome { get; set; }
+        public string Nome { get; set; } = string.Empty;
     }
 }

@@ -45,6 +45,22 @@ namespace FamilyTree.Controllers
             return Ok(results);
         }
 
+        // 🔹 Agora temos endpoints separados para filhos do pai e filhos da mãe
+        [HttpGet("{id}/filhos/pai")]
+        public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhosDoPai(int id)
+        {
+            var results = await _pessoas.ObterFilhosDoPaiAsync(id);
+            return Ok(results);
+        }
+
+        [HttpGet("{id}/filhos/mae")]
+        public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhosDaMae(int id)
+        {
+            var results = await _pessoas.ObterFilhosDaMaeAsync(id);
+            return Ok(results);
+        }
+
+        // Mantemos o endpoint genérico para compatibilidade (retorna filhos de pai OU mãe)
         [HttpGet("{id}/filhos")]
         public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhos(int id)
         {
