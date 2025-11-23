@@ -40,6 +40,9 @@ namespace FamilyTree.DTOs
         // Agora temos duas listas distintas de filhos
         public List<FilhoDto> FilhosDoPai { get; set; } = new List<FilhoDto>();
         public List<FilhoDto> FilhosDaMae { get; set; } = new List<FilhoDto>();
+
+        // 🔹 Token só aparece se o usuário logado for o criador da pessoa
+        public string? ValidationToken { get; set; }
     }
 
     public class FilhoDto

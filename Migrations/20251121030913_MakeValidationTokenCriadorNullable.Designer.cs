@@ -3,6 +3,7 @@ using System;
 using FamilyTree.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FamilyTree.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251121030913_MakeValidationTokenCriadorNullable")]
+    partial class MakeValidationTokenCriadorNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
@@ -359,22 +362,22 @@ namespace FamilyTree.Migrations
                     b.HasOne("FamilyTree.Models.Pessoa", "Conjuge")
                         .WithOne()
                         .HasForeignKey("FamilyTree.Models.Pessoa", "ConjugeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Usuario", "CriadorUsuario")
                         .WithMany()
                         .HasForeignKey("CriadorUsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Pessoa", "Mae")
                         .WithMany("FilhosDaMae")
                         .HasForeignKey("MaeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Pessoa", "Pai")
                         .WithMany("FilhosDoPai")
                         .HasForeignKey("PaiId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Usuario", "Usuario")
                         .WithOne("Pessoa")
@@ -427,7 +430,7 @@ namespace FamilyTree.Migrations
                     b.HasOne("FamilyTree.Models.Usuario", null)
                         .WithMany()
                         .HasForeignKey("GeradoPorUsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Usuario", "GeradoPorUsuario")
                         .WithMany()
@@ -436,7 +439,7 @@ namespace FamilyTree.Migrations
                     b.HasOne("FamilyTree.Models.Pessoa", "Pessoa")
                         .WithMany()
                         .HasForeignKey("PessoaId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("GeradoPorUsuario");
 

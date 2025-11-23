@@ -15,8 +15,10 @@ namespace FamilyTree.Services
             _context = context;
         }
 
-        public async Task<PessoaResponseDto?> CriarAsync(PessoaUpsertDto dto)
+        public async Task<PessoaResponseDto?> CriarAsync(PessoaUpsertDto dto, int usuarioId)
         {
+            var criador = await _context.Usuarios.FindAsync(usuarioId) ?? throw new Exception("Usuário criador não encontrado.");
+
             var pessoa = new Pessoa
             {
                 Nome = dto.Nome,
@@ -24,19 +26,39 @@ namespace FamilyTree.Services
                 CPF = dto.Cpf,
                 PaiId = dto.PaiId,
                 MaeId = dto.MaeId,
-                ConjugeId = dto.ConjugeId
+                ConjugeId = dto.ConjugeId,
+                CriadorUsuarioId = criador.Id
             };
 
             _context.Pessoas.Add(pessoa);
             await _context.SaveChangesAsync();
 
-            return await ObterPorIdAsync(pessoa.Id);
+            // 🔹 Gera token automaticamente se não houver usuário vinculado
+            if (pessoa.UsuarioId == null)
+            {
+                var token = new ValidationToken
+                {
+                    PessoaId = pessoa.Id,
+                    GeradoPorUsuarioId = usuarioId,
+                    Token = Guid.NewGuid().ToString("N"),
+                    DataCriacao = DateTime.UtcNow
+                };
+
+                _context.ValidationTokens.Add(token);
+                await _context.SaveChangesAsync();
+            }
+
+            return await ObterPorIdAsync(pessoa.Id, usuarioId);
         }
 
-        public async Task<PessoaResponseDto?> AtualizarAsync(int id, PessoaUpsertDto dto)
+        public async Task<PessoaResponseDto?> AtualizarAsync(int id, PessoaUpsertDto dto, int usuarioId)
         {
             var pessoa = await _context.Pessoas.FindAsync(id);
             if (pessoa is null) return null;
+
+            // 🔹 Garantir que apenas o criador pode atualizar
+            if (pessoa.CriadorUsuarioId != usuarioId)
+                throw new UnauthorizedAccessException("Você não tem permissão para atualizar esta pessoa.");
 
             pessoa.Nome = dto.Nome;
             pessoa.DataNascimento = dto.DataNascimento;
@@ -46,10 +68,11 @@ namespace FamilyTree.Services
             pessoa.ConjugeId = dto.ConjugeId;
 
             await _context.SaveChangesAsync();
-            return await ObterPorIdAsync(pessoa.Id);
+
+            return await ObterPorIdAsync(pessoa.Id, usuarioId);
         }
 
-        public async Task<PessoaResponseDto?> ObterPorIdAsync(int id)
+        public async Task<PessoaResponseDto?> ObterPorIdAsync(int id, int usuarioId)
         {
             var pessoa = await _context.Pessoas
                 .Include(p => p.Pai)
@@ -61,7 +84,7 @@ namespace FamilyTree.Services
 
             if (pessoa is null) return null;
 
-            return new PessoaResponseDto
+            var response = new PessoaResponseDto
             {
                 Id = pessoa.Id,
                 Nome = pessoa.Nome,
@@ -71,8 +94,19 @@ namespace FamilyTree.Services
                 MaeId = pessoa.MaeId,
                 ConjugeId = pessoa.ConjugeId,
                 FilhosDoPai = pessoa.FilhosDoPai.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList(),
-                FilhosDaMae = pessoa.FilhosDaMae.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList()
+                FilhosDaMae = pessoa.FilhosDaMae.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList(),
             };
+
+            // 🔹 Retorna token apenas se o usuário logado for o criador
+            var token = await _context.ValidationTokens
+                .FirstOrDefaultAsync(t => t.PessoaId == pessoa.Id && !t.Utilizado);
+
+            if (token != null && pessoa.CriadorUsuarioId == usuarioId)
+            {
+                response.ValidationToken = token.Token;
+            }
+
+            return response;
         }
 
         public async Task<IEnumerable<PessoaResponseDto>> ObterTodosAsync()
@@ -81,6 +115,7 @@ namespace FamilyTree.Services
                 .Include(p => p.FilhosDoPai)
                 .Include(p => p.FilhosDaMae)
                 .ToListAsync();
+            
 
             return pessoas.Select(p => new PessoaResponseDto
             {
@@ -92,7 +127,8 @@ namespace FamilyTree.Services
                 MaeId = p.MaeId,
                 ConjugeId = p.ConjugeId,
                 FilhosDoPai = p.FilhosDoPai.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList(),
-                FilhosDaMae = p.FilhosDaMae.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList()
+                FilhosDaMae = p.FilhosDaMae.Select(f => new FilhoDto { Id = f.Id, Nome = f.Nome }).ToList(),
+                
             });
         }
 
@@ -166,6 +202,19 @@ namespace FamilyTree.Services
                 FilhosDoPai = pessoa.FilhosDoPai.Select(f => new { f.Id, f.Nome }),
                 FilhosDaMae = pessoa.FilhosDaMae.Select(f => new { f.Id, f.Nome })
             };
+        }
+
+        public async Task<bool> DeletarAsync(int pessoaId)
+        {
+            var pessoa = await _context.Pessoas.FindAsync(pessoaId);
+
+            if (pessoa == null)
+                throw new Exception("Pessoa não encontrada.");
+
+            _context.Pessoas.Remove(pessoa);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

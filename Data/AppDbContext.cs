@@ -26,33 +26,46 @@ namespace FamilyTree.Data
                 .HasMany(p => p.FilhosDoPai)
                 .WithOne(p => p.Pai)
                 .HasForeignKey(p => p.PaiId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Pessoa: Mãe ↔ FilhosDaMae
             modelBuilder.Entity<Pessoa>()
                 .HasMany(p => p.FilhosDaMae)
                 .WithOne(p => p.Mae)
                 .HasForeignKey(p => p.MaeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Pessoa: Conjuge (auto-relacionamento 1:1)
             modelBuilder.Entity<Pessoa>()
                 .HasOne(p => p.Conjuge)
                 .WithOne()
                 .HasForeignKey<Pessoa>(p => p.ConjugeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Índice único para CPF
             modelBuilder.Entity<Pessoa>()
                 .HasIndex(p => p.CPF)
                 .IsUnique();
 
-            // Usuário → Pessoa
-            modelBuilder.Entity<Usuario>()
-                .HasOne(u => u.Pessoa)
-                .WithMany()
-                .HasForeignKey(u => u.PessoaId)
+            modelBuilder.Entity<Pessoa>()
+                .HasOne(p => p.Usuario)
+                .WithOne(u => u.Pessoa)
+                .HasForeignKey<Pessoa>(p => p.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Pessoa>()
+                .HasOne(p => p.CriadorUsuario)
+                .WithMany()
+                .HasForeignKey(p => p.CriadorUsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Usuário → Pessoa
+            // modelBuilder.Entity<Usuario>()
+            //     .HasOne(u => u.Pessoa)
+            //     .WithMany()
+            //     .HasForeignKey(u => u.PessoaId)
+            //     .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.Email)
@@ -63,14 +76,14 @@ namespace FamilyTree.Data
                 .HasOne(t => t.Pessoa)
                 .WithMany()
                 .HasForeignKey(t => t.PessoaId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ValidationToken → Emitente (Usuário)
             modelBuilder.Entity<ValidationToken>()
                 .HasOne<Usuario>()
                 .WithMany()
                 .HasForeignKey(t => t.GeradoPorUsuarioId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ValidationToken>()
                 .HasIndex(t => t.Token)

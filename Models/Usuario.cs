@@ -11,8 +11,8 @@ namespace FamilyTree.Models
 
         public DateTime DataCriacao {get; set;} = DateTime.UtcNow;
 
-        public int PessoaId {get; set;}
-        public Pessoa Pessoa {get; set;}
+        public int? PessoaId {get; set;}
+        public Pessoa? Pessoa {get; set;}
 
         public ICollection<Registro> RegistrosCriados {get; set;}
         public ICollection<Assinatura> Assinaturas {get; set;} = new List<Assinatura>();
