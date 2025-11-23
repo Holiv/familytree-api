@@ -11,6 +11,8 @@ namespace FamilyTree.Models
         public int CriadorId { get; set; }
         public Usuario Criador { get; set; }
 
-        public ICollection<RegistroPessoa> RegistroPessoas {get; set;}
+        public ICollection<RegistroPessoa> RegistroPessoas {get; set;} = new List<RegistroPessoa>();
     }
+
 }
+

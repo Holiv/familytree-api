@@ -3,6 +3,7 @@ using System;
 using FamilyTree.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FamilyTree.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251120221650_AddValidationTokenAndPessoaCriador")]
+    partial class AddValidationTokenAndPessoaCriador
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
@@ -123,8 +126,14 @@ namespace FamilyTree.Migrations
                     b.Property<int?>("ConjugeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("CriadorUsuarioId")
+                    b.Property<int>("CriadorUsuarioId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<int>("CriadorUsuarioId1")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("DataFalescimento")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("DataNascimento")
                         .HasColumnType("TEXT");
@@ -142,6 +151,9 @@ namespace FamilyTree.Migrations
                     b.Property<int?>("UsuarioId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("UsuarioId1")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CPF")
@@ -150,14 +162,13 @@ namespace FamilyTree.Migrations
                     b.HasIndex("ConjugeId")
                         .IsUnique();
 
-                    b.HasIndex("CriadorUsuarioId");
+                    b.HasIndex("CriadorUsuarioId1");
 
                     b.HasIndex("MaeId");
 
                     b.HasIndex("PaiId");
 
-                    b.HasIndex("UsuarioId")
-                        .IsUnique();
+                    b.HasIndex("UsuarioId1");
 
                     b.ToTable("Pessoas");
                 });
@@ -256,7 +267,7 @@ namespace FamilyTree.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PessoaId")
+                    b.Property<int>("PessoaId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SenhaHash")
@@ -268,10 +279,12 @@ namespace FamilyTree.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("PessoaId");
+
                     b.ToTable("Usuarios");
                 });
 
-            modelBuilder.Entity("FamilyTree.Models.ValidationToken", b =>
+            modelBuilder.Entity("ValidationToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -283,13 +296,13 @@ namespace FamilyTree.Migrations
                     b.Property<DateTime?>("DataExpiracao")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("GeradoPorUsuarioId")
+                    b.Property<int>("GeradoPorUsuarioId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("GeradoPorUsuarioId1")
+                    b.Property<int>("GeradoPorUsuarioId1")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("PessoaId")
+                    b.Property<int>("PessoaId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Token")
@@ -359,27 +372,27 @@ namespace FamilyTree.Migrations
                     b.HasOne("FamilyTree.Models.Pessoa", "Conjuge")
                         .WithOne()
                         .HasForeignKey("FamilyTree.Models.Pessoa", "ConjugeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Usuario", "CriadorUsuario")
                         .WithMany()
-                        .HasForeignKey("CriadorUsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("CriadorUsuarioId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("FamilyTree.Models.Pessoa", "Mae")
                         .WithMany("FilhosDaMae")
                         .HasForeignKey("MaeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Pessoa", "Pai")
                         .WithMany("FilhosDoPai")
                         .HasForeignKey("PaiId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyTree.Models.Usuario", "Usuario")
-                        .WithOne("Pessoa")
-                        .HasForeignKey("FamilyTree.Models.Pessoa", "UsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany()
+                        .HasForeignKey("UsuarioId1");
 
                     b.Navigation("Conjuge");
 
@@ -422,21 +435,36 @@ namespace FamilyTree.Migrations
                     b.Navigation("Registro");
                 });
 
-            modelBuilder.Entity("FamilyTree.Models.ValidationToken", b =>
+            modelBuilder.Entity("FamilyTree.Models.Usuario", b =>
+                {
+                    b.HasOne("FamilyTree.Models.Pessoa", "Pessoa")
+                        .WithMany()
+                        .HasForeignKey("PessoaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Pessoa");
+                });
+
+            modelBuilder.Entity("ValidationToken", b =>
                 {
                     b.HasOne("FamilyTree.Models.Usuario", null)
                         .WithMany()
                         .HasForeignKey("GeradoPorUsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("FamilyTree.Models.Usuario", "GeradoPorUsuario")
                         .WithMany()
-                        .HasForeignKey("GeradoPorUsuarioId1");
+                        .HasForeignKey("GeradoPorUsuarioId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("FamilyTree.Models.Pessoa", "Pessoa")
                         .WithMany()
                         .HasForeignKey("PessoaId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("GeradoPorUsuario");
 
@@ -467,8 +495,6 @@ namespace FamilyTree.Migrations
                     b.Navigation("Assinaturas");
 
                     b.Navigation("Pedidos");
-
-                    b.Navigation("Pessoa");
 
                     b.Navigation("RegistrosCriados");
                 });

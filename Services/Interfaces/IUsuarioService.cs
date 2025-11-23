@@ -4,8 +4,9 @@ namespace FamilyTree.Services.Interfaces
 {
     public interface IUsuarioService
     {
-        Task<UsuarioResponseDto> CriarAsync(UsuarioCreateDto dto);
+        Task<UsuarioResponseDto?> CriarAsync(UsuarioCreateDto dto);
+        Task<bool> VincularTokenAsync(int usuarioId, string tokenValue);
         Task<UsuarioResponseDto?> ObterPorIdAsync(int id);
-        Task<IEnumerable<UsuarioResponseDto>> ObterTodosAsync();
+        Task<IEnumerable<UsuarioDto>> ObterTodosAsync();
     }
 }

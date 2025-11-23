@@ -4,15 +4,86 @@
 
 O **FamilyTree API** é um projeto em .NET 8 que tem como objetivo construir uma plataforma para gerenciamento de árvores genealógicas, registros familiares, narrativas, assinaturas e marketplace de produtos/serviços relacionados.
 
-Esta é a **primeira versão (MVP)**, que já contempla:
+Esta é a **primeira versão (MVP)**
 
-- CRUD de **Usuários** e **Pessoas**.
-- CRUD de **Registros** (eventos, memórias, fotos).
-- CRUD de **Assinaturas** (planos e pagamentos).
-- CRUD de **Marketplace** (produtos e pedidos).
-- CRUD de **Narrativas** (histórias vinculadas a pessoas).
-- Integração com **Swagger** para testes de API.
+## 🚀 Funcionalidades principais
 
+- **Gerenciamento de Pessoas**
+  - Criar, atualizar, obter e deletar pessoas.
+  - Obter filhos, irmãos e subárvore de uma pessoa.
+  - Vinculação de Pessoa ↔ Usuário via **ValidationToken**.
+
+- **Gerenciamento de Usuários**
+  - Criar usuários vinculados a Pessoas.
+  - Obter informações completas de um usuário, incluindo registros e pessoas relacionadas.
+
+- **Gerenciamento de Registros**
+  - Criar registros (eventos, fotos, legendas).
+  - Obter registros por ID.
+  - Obter todos os registros.
+  - 🔹 **Novo:** Obter registros vinculados a uma Pessoa específica (`GET /api/registros/pessoa/{id}`).
+
+---
+
+## 🔑 Fluxo de ValidationToken
+
+- Quando uma **Pessoa** é criada sem Usuário, um **ValidationToken** é gerado automaticamente.
+- Esse token pode ser usado posteriormente para vincular um **Usuário** à Pessoa existente.
+- Após a vinculação, todos os registros associados à Pessoa passam a ser visíveis também pelo Usuário.
+
+### Exemplo de fluxo
+1. Criar Pessoa sem Usuário → gera ValidationToken.
+2. Criar Usuário informando o token → vincula Usuário ↔ Pessoa.
+3. Consultar Usuário → registros da Pessoa aparecem.
+4. Consultar Pessoa → registros continuam acessíveis normalmente.
+
+---
+
+## 🌐 Endpoints principais
+
+### Pessoas
+- `POST /api/pessoas` → cria uma nova pessoa.
+- `GET /api/pessoas/{id}` → obtém dados básicos da pessoa.
+- `GET /api/pessoas/{id}/registros` → obtém pessoa com registros.
+- `GET /api/pessoas/{id}/filhos` → lista filhos da pessoa.
+- `GET /api/pessoas/{id}/irmaos` → lista irmãos da pessoa.
+- `DELETE /api/pessoas/{id}` → exclui pessoa (cascade delete remove vínculos e tokens).
+
+### Usuários
+- `POST /api/usuarios` → cria usuário (pode informar ValidationToken).
+- `GET /api/usuarios/{id}` → obtém dados completos do usuário, incluindo registros.
+
+### Registros
+- `POST /api/registros` → cria novo registro.
+- `GET /api/registros/{id}` → obtém registro por ID.
+- `GET /api/registros` → lista todos os registros.
+- 🔹 `GET /api/registros/pessoa/{pessoaId}` → lista registros vinculados a uma pessoa.
+
+---
+
+## 📂 Exemplo de resposta do endpoint de registros por pessoa
+
+**Requisição:**
+`GET /api/registros/pessoa/3`
+
+
+**Resposta:**
+```json
+[
+  {
+    "id": 1,
+    "data": "2025-11-22",
+    "legenda": "Aniversário da Laiz",
+    "fotoPath": "/uploads/foto1.jpg",
+    "criadorId": 2,
+    "criadorEmail": "helton@email.com",
+    "pessoasEnvolvidas": [
+      { "id": 3, "nome": "Laiz" },
+      { "id": 1, "nome": "Helton" }
+    ]
+  }
+]
+```
 ---
 
 ## 🚀 Tecnologias Utilizadas

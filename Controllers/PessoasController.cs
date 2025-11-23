@@ -1,6 +1,7 @@
 using FamilyTree.DTOs;
 using FamilyTree.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FamilyTree.Controllers
 {
@@ -15,25 +16,37 @@ namespace FamilyTree.Controllers
             _pessoas = pessoas;
         }
 
-        [HttpPost]
-        public async Task<ActionResult<PessoaResponseDto>> CreatePessoa(PessoaUpsertDto dto)
+        // 🔹 Helper para obter o usuário logado
+        private int GetUsuarioId(int usuarioId)
         {
-            var result = await _pessoas.CriarAsync(dto);
+            //  🔹 Implementar lógica real de autenticação aqui
+            // var claim = User.FindFirst(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException("Usuário não autenticado.");
+            // return int.Parse(claim.Value);
+            return usuarioId;
+        }
+
+        [HttpPost("{usuarioId}")]
+        public async Task<ActionResult<PessoaResponseDto>> CreatePessoa(PessoaUpsertDto dto, int usuarioId)
+        {
+            var uId = GetUsuarioId(usuarioId);
+            var result = await _pessoas.CriarAsync(dto, uId);
             return CreatedAtAction(nameof(GetPessoaById), new { id = result?.Id }, result);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<PessoaResponseDto>> UpdatePessoa(int id, PessoaUpsertDto dto)
         {
-            var result = await _pessoas.AtualizarAsync(id, dto);
+            var usuarioId = GetUsuarioId(id);
+            var result = await _pessoas.AtualizarAsync(id, dto, usuarioId);
             if (result is null) return NotFound();
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<PessoaResponseDto>> GetPessoaById(int id)
+        [HttpGet("{id}/{usuarioId}")]
+        public async Task<ActionResult<PessoaResponseDto>> GetPessoaById(int id, int usuarioId)
         {
-            var result = await _pessoas.ObterPorIdAsync(id);
+            var uId = GetUsuarioId(usuarioId);
+            var result = await _pessoas.ObterPorIdAsync(id, uId);
             if (result is null) return NotFound();
             return Ok(result);
         }
@@ -45,7 +58,13 @@ namespace FamilyTree.Controllers
             return Ok(results);
         }
 
-        // 🔹 Agora temos endpoints separados para filhos do pai e filhos da mãe
+        [HttpGet("{id}/filhos")]
+        public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhos(int id)
+        {
+            var results = await _pessoas.ObterFilhosAsync(id);
+            return Ok(results);
+        }
+
         [HttpGet("{id}/filhos/pai")]
         public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhosDoPai(int id)
         {
@@ -57,14 +76,6 @@ namespace FamilyTree.Controllers
         public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhosDaMae(int id)
         {
             var results = await _pessoas.ObterFilhosDaMaeAsync(id);
-            return Ok(results);
-        }
-
-        // Mantemos o endpoint genérico para compatibilidade (retorna filhos de pai OU mãe)
-        [HttpGet("{id}/filhos")]
-        public async Task<ActionResult<IEnumerable<FilhoDto>>> GetFilhos(int id)
-        {
-            var results = await _pessoas.ObterFilhosAsync(id);
             return Ok(results);
         }
 
@@ -80,6 +91,17 @@ namespace FamilyTree.Controllers
         {
             var result = await _pessoas.ObterSubArvoreAsync(id);
             return Ok(result);
+        }
+
+        [HttpDelete("{pessoaId}")]
+        public async Task<IActionResult> DeletePessoa(int pessoaId)
+        {
+            var success = await _pessoas.DeletarAsync(pessoaId);
+            if (!success)
+            {
+                return NotFound();
+            }
+            return NoContent();
         }
     }
 }
