@@ -36,5 +36,14 @@ namespace FamilyTree.Controllers
             var results = await _registros.ObterTodosAsync();
             return Ok(results);
         }
+
+        [HttpGet("pessoa/{pessoaId}")]
+        public async Task<ActionResult<IEnumerable<RegistroResponseDto>>> ObterRegistrosPorPessoaId(int pessoaId)
+        {
+            var registros = await _registros.ObterPorPessoaIdAsync(pessoaId);
+            if (registros is null || !registros.Any()) return NotFound(new { Message = "Nenhum registro encontrado para a pessoa especificada." });
+            return Ok(registros);
+        }
+
     }
 }

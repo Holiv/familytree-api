@@ -69,6 +69,54 @@ namespace FamilyTree.Services
             };
         }
 
+        public async Task<IEnumerable<RegistroResponseDto>> ObterPorPessoaIdAsync(int pessoaId)
+        {
+            var registros = await _context.Registros
+                .Include(r => r.Criador)
+                .Include(r => r.RegistroPessoas)
+                    .ThenInclude(rp => rp.Pessoa)
+                .Where(r => 
+                    r.RegistroPessoas.Any(rp => rp.Pessoa.Id == pessoaId) || (r.Criador != null && r.Criador.Pessoa != null && r.Criador.Pessoa.Id == pessoaId))
+                .OrderByDescending(r => r.Data)
+                .ToListAsync();
+
+            return registros.Select(r => new RegistroResponseDto
+            {
+                Id = r.Id,
+                Data = r.Data,
+                Legenda = r.Legenda,
+                FotoPath = r.FotoPath,
+                CriadorId = r.CriadorId,
+                CriadorEmail = r.Criador.Email,
+                PessoasEnvolvidas = r.RegistroPessoas.Select(rp => new PessoaResumoDto
+                {
+                    Id = rp.Pessoa.Id,
+                    Nome = rp.Pessoa.Nome
+                }).ToList()
+            });
+            // return await _context.Registros
+            //     .Include(r => r.RegistroPessoas)
+            //     .Include(r => r.Criador)
+            //         .ThenInclude(u => u.Pessoa)
+            //     .Include(r => r.Pess)
+            //     .Where(r => r.CriadorId == pessoaId || 
+            //         r.RegistroPessoas.Any(rp => rp.Pessoa.Id == pessoaId))
+            //     .Select(r => new RegistroResponseDto
+            //     {
+            //         Id = r.Id,
+            //         Data = r.Data,
+            //         Legenda = r.Legenda,
+            //         FotoPath = r.FotoPath,
+            //         CriadorId = r.CriadorId,
+            //         CriadorEmail = r.Criador.Email,
+            //         PessoasEnvolvidas = r.RegistroPessoas.Select(rp => new PessoaResumoDto
+            //         {
+            //             Id = rp.Pessoa.Id,
+            //             Nome = rp.Pessoa.Nome
+            //         }).ToList()
+            //     }).ToListAsync();
+        }
+
         public async Task<IEnumerable<RegistroResponseDto>> ObterTodosAsync()
         {
             var registros = await _context.Registros
