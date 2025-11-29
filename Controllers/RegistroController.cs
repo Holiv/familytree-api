@@ -45,5 +45,18 @@ namespace FamilyTree.Controllers
             return Ok(registros);
         }
 
+        [HttpPut("{id}")]
+        public async Task<ActionResult<RegistroResponseDto>> AtualizarRegistro(int id, RegistroUpsertDto dto)
+        {
+            if (dto is null)
+            {
+                return BadRequest(new { Message = "Dados de atualização inválidos." });
+            }
+
+            var updatedRegistro = await _registros.AtualizarAsync(id, dto);
+            if (updatedRegistro is null) return NotFound(new { Message = "Registro não encontrado para atualização." });
+            return Ok(updatedRegistro);
+        }
+
     }
 }
