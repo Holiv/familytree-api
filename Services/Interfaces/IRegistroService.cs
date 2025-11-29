@@ -9,7 +9,7 @@ namespace FamilyTree.Services.Interfaces
         Task<RegistroResponseDto?> ObterPorIdAsync(int id);
         Task<IEnumerable<RegistroResponseDto>> ObterTodosAsync();
         Task<IEnumerable<RegistroResponseDto>> ObterPorPessoaIdAsync(int pessoaId);
-        // Task<RegistroResponseDto?> AtualizarAsync(int id, RegistroUpsertDto dto);
+        Task<RegistroResponseDto?> AtualizarAsync(int id, RegistroUpsertDto dto);
         // Task<bool> DeletarAsync(int id);
     }
 }

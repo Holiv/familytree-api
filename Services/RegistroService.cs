@@ -94,27 +94,6 @@ namespace FamilyTree.Services
                     Nome = rp.Pessoa.Nome
                 }).ToList()
             });
-            // return await _context.Registros
-            //     .Include(r => r.RegistroPessoas)
-            //     .Include(r => r.Criador)
-            //         .ThenInclude(u => u.Pessoa)
-            //     .Include(r => r.Pess)
-            //     .Where(r => r.CriadorId == pessoaId || 
-            //         r.RegistroPessoas.Any(rp => rp.Pessoa.Id == pessoaId))
-            //     .Select(r => new RegistroResponseDto
-            //     {
-            //         Id = r.Id,
-            //         Data = r.Data,
-            //         Legenda = r.Legenda,
-            //         FotoPath = r.FotoPath,
-            //         CriadorId = r.CriadorId,
-            //         CriadorEmail = r.Criador.Email,
-            //         PessoasEnvolvidas = r.RegistroPessoas.Select(rp => new PessoaResumoDto
-            //         {
-            //             Id = rp.Pessoa.Id,
-            //             Nome = rp.Pessoa.Nome
-            //         }).ToList()
-            //     }).ToListAsync();
         }
 
         public async Task<IEnumerable<RegistroResponseDto>> ObterTodosAsync()
@@ -140,6 +119,35 @@ namespace FamilyTree.Services
                     Nome = rp.Pessoa.Nome
                 }).ToList()
             });
+        }
+
+        public async Task<RegistroResponseDto?> AtualizarAsync(int id, RegistroUpsertDto dto)
+        {
+            var registro = await _context.Registros
+                .Include(r => r.RegistroPessoas)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (registro is null) return null;
+
+            registro.Data = dto.Data;
+            registro.Legenda = dto.Legenda;
+            registro.FotoPath = dto.FotoPath;
+
+            // Atualiza as pessoas associadas
+            _context.RegistrosPessoa.RemoveRange(registro.RegistroPessoas);
+
+            foreach (var pessoaId in dto.PessoasIds)
+            {
+                _context.RegistrosPessoa.Add(new RegistroPessoa
+                {
+                    RegistroId = registro.Id,
+                    PessoaId = pessoaId
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return await ObterPorIdAsync(registro.Id);
         }
     }
 }
